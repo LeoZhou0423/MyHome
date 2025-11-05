@@ -1106,71 +1106,57 @@
       }
     ];
 
-    // 将图片预加载函数提前定义
+    // 直接显示主内容并异步加载图片
     function initImagePreloading() {
+      // 立即显示主内容，不等待图片加载完成
+      showMainContent();
+      
+      // 异步预加载图片，但不阻塞界面显示
       const lazyImages = document.querySelectorAll('img[data-src]');
-      const totalImages = lazyImages.length;
-      let loadedCount = 0;
-      let preloadComplete = false;
-      
-      console.log(`开始预加载 ${totalImages} 张图片...`);
-      
-      function checkAllImagesLoaded() {
-        loadedCount++;
-        console.log(`已加载 ${loadedCount}/${totalImages} 张图片`);
-        
-        if (loadedCount >= totalImages && !preloadComplete) {
-          preloadComplete = true;
-          console.log('🎉 所有图片加载完成！');
-          showMainContent();
-        }
-      }
-      
-      function showMainContent() {
-        const loadingScreen = document.getElementById('loading-screen');
-        const mainContent = document.getElementById('main-content');
-        
-        if (!loadingScreen || !mainContent) {
-          console.error('Loading screen or main content element not found.');
-          return;
-        }
-        
-        loadingScreen.style.opacity = '0';
-        setTimeout(() => {
-          loadingScreen.style.display = 'none';
-          mainContent.style.display = 'block';
-          
-          // 所有图片加载完成后初始化GSAP动画
-          if (typeof initGSAPAnimations === 'function') {
-            initGSAPAnimations();
-          }
-        }, 500);
-      }
       
       lazyImages.forEach(img => {
         const tempImg = new Image();
         const src = img.getAttribute('data-src');
         
         if (!src) {
-          console.warn('Image element has no data-src attribute:', img);
-          checkAllImagesLoaded();
           return;
         }
         
         tempImg.onload = () => {
           img.src = src;
           img.classList.add('loaded');
-          checkAllImagesLoaded();
         };
         
         tempImg.onerror = () => {
           console.warn(`图片加载失败: ${src}`);
-          // 即使加载失败，也标记为完成，避免阻塞
-          checkAllImagesLoaded();
         };
         
         tempImg.src = src;
       });
+    }
+    
+    function showMainContent() {
+      const loadingScreen = document.getElementById('loading-screen');
+      const mainContent = document.getElementById('main-content');
+      
+      if (!loadingScreen || !mainContent) {
+        console.error('Loading screen or main content element not found.');
+        return;
+      }
+      
+      // 短暂延迟后移除加载屏幕并显示主内容
+      setTimeout(() => {
+        loadingScreen.style.opacity = '0';
+        setTimeout(() => {
+          loadingScreen.style.display = 'none';
+          mainContent.style.display = 'block';
+          
+          // 显示内容后初始化GSAP动画
+          if (typeof initGSAPAnimations === 'function') {
+            initGSAPAnimations();
+          }
+        }, 500);
+      }, 800); // 短暂延迟，给用户一个加载提示
     }
 
     // DOM元素 (在事件回调前定义，避免可能的引用问题)
